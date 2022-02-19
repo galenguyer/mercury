@@ -25,3 +25,6 @@ CONFIG_ESP_TLS_SKIP_SERVER_CERT_VERIFY=y
 
 # Future: proper back-trace for esp32c3
 #CONFIG_ESP_SYSTEM_USE_EH_FRAME=y
+
+# lol, wifi crashes without this
+CONFIG_ESP_SYSTEM_EVENT_TASK_STACK_SIZE=4096
