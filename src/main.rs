@@ -22,9 +22,9 @@ use embedded_svc::mqtt::client::{Client, Connection, Publish, QoS};
 use esp_idf_svc::mqtt::client::{EspMqttClient, MqttClientConfiguration};
 
 #[allow(dead_code)]
-const SSID: &str = env!("RUST_ESP32_STD_DEMO_WIFI_SSID");
+const SSID: &str = env!("ESP32_WIFI_SSID");
 #[allow(dead_code)]
-const PASS: &str = env!("RUST_ESP32_STD_DEMO_WIFI_PASS");
+const PASS: &str = env!("ESP32_WIFI_PASS");
 
 fn main() -> Result<()> {
     esp_idf_sys::link_patches();
@@ -46,7 +46,7 @@ fn main() -> Result<()> {
 
     #[allow(clippy::redundant_clone)]
     #[allow(unused_mut)]
-    let mut _wifi = wifi(
+    let mut wifi = wifi(
         netif_stack.clone(),
         sys_loop_stack.clone(),
         default_nvs.clone(),
@@ -55,10 +55,21 @@ fn main() -> Result<()> {
     let mut mqtt_client = send_mqtt_hello()?;
     mqtt_client.publish(
         "mercury",
-        QoS::AtMostOnce,
+        QoS::AtLeastOnce,
         false,
         format!("esp32-30c6f70b4f60: entering main loop").into_bytes(),
     )?;
+    let mut loop_count: u32 = 1;
+    loop {
+        mqtt_client.publish(
+            "mercury",
+            QoS::AtLeastOnce,
+            false,
+            format!("esp32-30c6f70b4f60: looped {} times", loop_count).into_bytes(),
+        )?;
+        loop_count += 1;
+        thread::sleep(Duration::from_secs(5));
+    }
     Ok(())
 }
 
@@ -69,9 +80,7 @@ fn wifi(
     default_nvs: Arc<EspDefaultNvs>,
 ) -> Result<Box<EspWifi>> {
     let mut wifi = Box::new(EspWifi::new(netif_stack, sys_loop_stack, default_nvs)?);
-
-    info!("Wifi created, about to scan");
-
+    
     let ap_infos = wifi.scan()?;
 
     let ours = ap_infos.into_iter().find(|a| a.ssid == SSID);
@@ -102,8 +111,6 @@ fn wifi(
         ..Default::default()
     }))?;
 
-    info!("Wifi configuration set, about to get status");
-
     let status = wifi.get_status();
 
     if let Status(
@@ -111,8 +118,6 @@ fn wifi(
         _,
     ) = status
     {
-        info!("Wifi connected");
-
         //ping(&ip_settings)?;
     } else {
         bail!("Unexpected Wifi status: {:?}", status);
@@ -145,7 +150,7 @@ fn send_mqtt_hello() -> Result<esp_idf_svc::mqtt::client::EspMqttClient> {
         ..Default::default()
     };
 
-    let (mut client, mut connection) = EspMqttClient::new("mqtts://129.21.49.30:8883", &conf)?;
+    let (mut client, mut connection) = EspMqttClient::new("mqtt://129.21.49.30:1883", &conf)?;
 
     // Need to immediately start pumping the connection for messages, or else subscribe() and publish() below will not work
     // Note that when using the alternative constructor - `EspMqttClient::new_with_callback` - you don't need to
