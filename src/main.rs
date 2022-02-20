@@ -1,7 +1,10 @@
 #![allow(unused_imports)]
+use std::{env, sync::Arc, thread, time::*};
+
 use anyhow::bail;
 use log::*;
-use std::{cell::RefCell, env, sync::atomic::*, sync::Arc, thread, time::*};
+
+use embedded_hal::digital::v2::OutputPin;
 
 use embedded_svc::httpd::*;
 use embedded_svc::ipv4;
@@ -14,8 +17,14 @@ use esp_idf_svc::ping;
 use esp_idf_svc::sysloop::*;
 use esp_idf_svc::wifi::*;
 
+use esp_idf_hal::adc;
+use esp_idf_hal::delay;
+use esp_idf_hal::gpio;
+use esp_idf_hal::i2c;
 use esp_idf_hal::prelude::*;
+use esp_idf_hal::spi;
 
+use esp_idf_sys::esp;
 use esp_idf_sys::{self, c_types};
 
 use embedded_svc::mqtt::client::{Client, Connection, Publish, QoS};
@@ -25,6 +34,7 @@ use esp_idf_svc::mqtt::client::{EspMqttClient, MqttClientConfiguration};
 const SSID: &str = env!("ESP32_WIFI_SSID");
 #[allow(dead_code)]
 const PASS: &str = env!("ESP32_WIFI_PASS");
+static mut MAC: &str = "";
 
 fn main() -> Result<()> {
     esp_idf_sys::link_patches();
@@ -51,26 +61,28 @@ fn main() -> Result<()> {
         sys_loop_stack.clone(),
         default_nvs.clone(),
     )?;
+    wifi.with_client_netif(|netinf| unsafe {
+        MAC = Box::leak(hex::encode(netinf.unwrap().get_mac().unwrap()).into_boxed_str());
+    });
 
-    let mut mqtt_client = send_mqtt_hello()?;
-    mqtt_client.publish(
-        "mercury",
-        QoS::AtLeastOnce,
-        false,
-        format!("esp32-30c6f70b4f60: entering main loop").into_bytes(),
-    )?;
+    let mut mqtt_client = mqtt_connect()?;
+    mqtt_send(&mut mqtt_client, "mercury", "entering main loop");
+
+    let mut led = pins.gpio2.into_input_output_od().unwrap();
+
     let mut loop_count: u32 = 1;
     loop {
-        mqtt_client.publish(
+        led.set_high().unwrap();
+        mqtt_send(
+            &mut mqtt_client,
             "mercury",
-            QoS::AtLeastOnce,
-            false,
-            format!("esp32-30c6f70b4f60: looped {} times", loop_count).into_bytes(),
-        )?;
+            &format!("looped {} times", loop_count),
+        );
         loop_count += 1;
-        thread::sleep(Duration::from_secs(5));
+        thread::sleep(Duration::from_secs(1));
+        led.set_low().unwrap();
+        thread::sleep(Duration::from_secs(4));
     }
-    Ok(())
 }
 
 #[allow(dead_code)]
@@ -80,7 +92,7 @@ fn wifi(
     default_nvs: Arc<EspDefaultNvs>,
 ) -> Result<Box<EspWifi>> {
     let mut wifi = Box::new(EspWifi::new(netif_stack, sys_loop_stack, default_nvs)?);
-    
+
     let ap_infos = wifi.scan()?;
 
     let ours = ap_infos.into_iter().find(|a| a.ssid == SSID);
@@ -114,7 +126,9 @@ fn wifi(
     let status = wifi.get_status();
 
     if let Status(
-        ClientStatus::Started(ClientConnectionStatus::Connected(ClientIpStatus::Done(_ip_settings))),
+        ClientStatus::Started(ClientConnectionStatus::Connected(ClientIpStatus::Done(
+            _ip_settings,
+        ))),
         _,
     ) = status
     {
@@ -144,42 +158,56 @@ fn ping(ip_settings: &ipv4::ClientSettings) -> Result<()> {
     Ok(())
 }
 
-fn send_mqtt_hello() -> Result<esp_idf_svc::mqtt::client::EspMqttClient> {
-    let conf = MqttClientConfiguration {
-        client_id: Some("esp32-30c6f70b4f60"),
-        ..Default::default()
-    };
+fn mqtt_connect() -> Result<esp_idf_svc::mqtt::client::EspMqttClient> {
+    unsafe {
+        let client_id = format!("esp32-{}", MAC);
+        let conf = MqttClientConfiguration {
+            client_id: Some(&client_id),
+            ..Default::default()
+        };
 
-    let (mut client, mut connection) = EspMqttClient::new("mqtt://129.21.49.30:1883", &conf)?;
+        let (mut client, mut connection) = EspMqttClient::new("mqtt://129.21.49.30:1883", &conf)?;
 
-    // Need to immediately start pumping the connection for messages, or else subscribe() and publish() below will not work
-    // Note that when using the alternative constructor - `EspMqttClient::new_with_callback` - you don't need to
-    // spawn a new thread, as the messages will be pumped with a backpressure into the callback you provide.
-    // Yet, you still need to efficiently process each message in the callback without blocking for too long.
-    //
-    // Note also that if you go to http://tools.emqx.io/ and then connect and send a message to topic
-    // "mercury", the client configured here should receive it.
-    thread::spawn(move || {
-        info!("MQTT Listening for messages");
+        // Need to immediately start pumping the connection for messages, or else subscribe() and publish() below will not work
+        // Note that when using the alternative constructor - `EspMqttClient::new_with_callback` - you don't need to
+        // spawn a new thread, as the messages will be pumped with a backpressure into the callback you provide.
+        // Yet, you still need to efficiently process each message in the callback without blocking for too long.
+        //
+        // Note also that if you go to http://tools.emqx.io/ and then connect and send a message to topic
+        // "mercury", the client configured here should receive it.
+        thread::spawn(move || {
+            info!("MQTT Listening for messages");
 
-        while let Some(msg) = connection.next() {
-            match msg {
-                Err(e) => info!("MQTT Message ERROR: {}", e),
-                Ok(msg) => info!("MQTT Message: {:?}", msg),
+            while let Some(msg) = connection.next() {
+                match msg {
+                    Err(e) => info!("MQTT Message ERROR: {}", e),
+                    Ok(msg) => info!("MQTT Message: {:?}", msg),
+                }
             }
-        }
 
-        info!("MQTT connection loop exit");
-    });
+            info!("MQTT connection loop exit");
+        });
 
-    client.subscribe("mercury", QoS::AtMostOnce)?;
+        client.subscribe("mercury", QoS::AtMostOnce)?;
 
-    client.publish(
-        "mercury",
-        QoS::AtMostOnce,
-        false,
-        format!("{}: connected", conf.client_id.unwrap()).as_bytes(),
-    )?;
+        mqtt_send(&mut client, "mercury", "connected");
 
-    Ok(client)
+        Ok(client)
+    }
+}
+
+fn mqtt_send(
+    client: &mut EspMqttClient,
+    topic: &str,
+    message: &str,
+) -> Result<u32, esp_idf_sys::EspError> {
+    unsafe {
+        let client_id = format!("esp32-{}", MAC);
+        client.publish(
+            topic,
+            QoS::AtLeastOnce,
+            false,
+            format!("{}: {}", client_id, message).as_bytes(),
+        )
+    }
 }
