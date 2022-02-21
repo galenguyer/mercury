@@ -61,6 +61,14 @@ fn main() -> Result<()> {
         sys_loop_stack.clone(),
         default_nvs.clone(),
     )?;
+    wifi.with_client_netif_mut(|netinf| {
+        netinf.unwrap().set_dns(ipv4::Ipv4Addr::new(129, 21, 1, 82));
+    });
+    wifi.with_client_netif_mut(|netinf| {
+        netinf
+            .unwrap()
+            .set_secondary_dns(ipv4::Ipv4Addr::new(129, 21, 1, 92));
+    });
     wifi.with_client_netif(|netinf| unsafe {
         MAC = Box::leak(hex::encode(netinf.unwrap().get_mac().unwrap()).into_boxed_str());
     });
@@ -166,7 +174,8 @@ fn mqtt_connect() -> Result<esp_idf_svc::mqtt::client::EspMqttClient> {
             ..Default::default()
         };
 
-        let (mut client, mut connection) = EspMqttClient::new("mqtt://129.21.49.30:1883", &conf)?;
+        let (mut client, mut connection) =
+            EspMqttClient::new("mqtt://mercury.student.rit.edu:1883", &conf)?;
 
         // Need to immediately start pumping the connection for messages, or else subscribe() and publish() below will not work
         // Note that when using the alternative constructor - `EspMqttClient::new_with_callback` - you don't need to

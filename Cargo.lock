@@ -456,7 +456,7 @@ dependencies = [
 [[package]]
 name = "esp-idf-svc"
 version = "0.36.10"
-source = "git+https://github.com/galenguyer/esp-idf-svc#c26839cb8ea7e819a7f9cb355ce272b810bde1bb"
+source = "git+https://github.com/galenguyer/esp-idf-svc?branch=mac#80d13e05ae930901090be39094328a5d71f40006"
 dependencies = [
  "anyhow",
  "cstr_core",

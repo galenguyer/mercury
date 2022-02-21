@@ -16,7 +16,7 @@ log = "0.4"
 url = "2"
 esp-idf-sys = { version = "0.30.3", features = ["binstart"] }
 #esp-idf-svc = { version = "0.36.9", features = ["experimental"] }
-esp-idf-svc = { git = "https://github.com/galenguyer/esp-idf-svc", features = ["experimental", "mac"] }
+esp-idf-svc = { git = "https://github.com/galenguyer/esp-idf-svc", branch = "mac", features = ["experimental"] }
 esp-idf-hal = { version = "0.32.9", features = ["experimental"] }
 embedded-svc = { version = "0.16", features = ["experimental"] }
 embedded-hal = "0.2"
