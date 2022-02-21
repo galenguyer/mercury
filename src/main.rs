@@ -61,20 +61,13 @@ fn main() -> Result<()> {
         sys_loop_stack.clone(),
         default_nvs.clone(),
     )?;
-    wifi.with_client_netif_mut(|netif| {
-        netif.unwrap().set_dns(ipv4::Ipv4Addr::new(129, 21, 1, 82));
-    });
-    wifi.with_client_netif_mut(|netif| {
-        netif
-            .unwrap()
-            .set_secondary_dns(ipv4::Ipv4Addr::new(129, 21, 1, 92));
-    });
+
     wifi.with_client_netif(|netif| unsafe {
         MAC = Box::leak(hex::encode(netif.unwrap().get_mac().unwrap()).into_boxed_str());
     });
 
     let mut mqtt_client = mqtt_connect()?;
-    mqtt_send(&mut mqtt_client, "mercury", "entering main loop");
+    mqtt_send(&mut mqtt_client, "mercury", "connected")?;
 
     let mut led = pins.gpio2.into_input_output_od().unwrap();
 
@@ -85,7 +78,7 @@ fn main() -> Result<()> {
             &mut mqtt_client,
             "mercury",
             &format!("looped {} times", loop_count),
-        );
+        )?;
         loop_count += 1;
         thread::sleep(Duration::from_secs(1));
         led.set_low().unwrap();
@@ -145,6 +138,23 @@ fn wifi(
         bail!("Unexpected Wifi status: {:?}", status);
     }
 
+    if let Some(ns) = option_env!("ESP32_PRIMARY_DNS_SERVER") {
+        wifi.with_client_netif_mut(|netif| {
+            netif.unwrap().set_dns(
+                ns.parse::<ipv4::Ipv4Addr>()
+                    .unwrap_or_else(|_| ipv4::Ipv4Addr::new(1, 1, 1, 1)),
+            );
+        });
+    }
+    if let Some(ns) = option_env!("ESP32_SECONDARY_DNS_SERVER") {
+        wifi.with_client_netif_mut(|netif| {
+            netif.unwrap().set_secondary_dns(
+                ns.parse::<ipv4::Ipv4Addr>()
+                    .unwrap_or_else(|_| ipv4::Ipv4Addr::new(8, 8, 8, 8)),
+            );
+        });
+    }
+
     Ok(wifi)
 }
 
@@ -198,8 +208,6 @@ fn mqtt_connect() -> Result<esp_idf_svc::mqtt::client::EspMqttClient> {
         });
 
         client.subscribe("mercury", QoS::AtMostOnce)?;
-
-        mqtt_send(&mut client, "mercury", "connected");
 
         Ok(client)
     }
