@@ -184,30 +184,20 @@ fn mqtt_connect() -> Result<esp_idf_svc::mqtt::client::EspMqttClient> {
             ..Default::default()
         };
 
-        let (mut client, mut connection) =
+        let (client, mut connection) =
             EspMqttClient::new("mqtt://mercury.student.rit.edu:1883", &conf)?;
 
-        // Need to immediately start pumping the connection for messages, or else subscribe() and publish() below will not work
-        // Note that when using the alternative constructor - `EspMqttClient::new_with_callback` - you don't need to
-        // spawn a new thread, as the messages will be pumped with a backpressure into the callback you provide.
-        // Yet, you still need to efficiently process each message in the callback without blocking for too long.
-        //
-        // Note also that if you go to http://tools.emqx.io/ and then connect and send a message to topic
-        // "mercury", the client configured here should receive it.
         thread::spawn(move || {
             info!("MQTT Listening for messages");
 
             while let Some(msg) = connection.next() {
-                match msg {
-                    Err(e) => info!("MQTT Message ERROR: {}", e),
-                    Ok(msg) => info!("MQTT Message: {:?}", msg),
+                if let Err(e) = msg {
+                    info!("MQTT Message ERROR: {}", e);
                 }
             }
 
             info!("MQTT connection loop exit");
         });
-
-        client.subscribe("mercury", QoS::AtMostOnce)?;
 
         Ok(client)
     }
@@ -222,7 +212,7 @@ fn mqtt_send(
         let client_id = format!("esp32-{}", MAC);
         client.publish(
             topic,
-            QoS::AtLeastOnce,
+            QoS::ExactlyOnce,
             false,
             format!("{}: {}", client_id, message).as_bytes(),
         )
