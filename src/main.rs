@@ -61,16 +61,16 @@ fn main() -> Result<()> {
         sys_loop_stack.clone(),
         default_nvs.clone(),
     )?;
-    wifi.with_client_netif_mut(|netinf| {
-        netinf.unwrap().set_dns(ipv4::Ipv4Addr::new(129, 21, 1, 82));
+    wifi.with_client_netif_mut(|netif| {
+        netif.unwrap().set_dns(ipv4::Ipv4Addr::new(129, 21, 1, 82));
     });
-    wifi.with_client_netif_mut(|netinf| {
-        netinf
+    wifi.with_client_netif_mut(|netif| {
+        netif
             .unwrap()
             .set_secondary_dns(ipv4::Ipv4Addr::new(129, 21, 1, 92));
     });
-    wifi.with_client_netif(|netinf| unsafe {
-        MAC = Box::leak(hex::encode(netinf.unwrap().get_mac().unwrap()).into_boxed_str());
+    wifi.with_client_netif(|netif| unsafe {
+        MAC = Box::leak(hex::encode(netif.unwrap().get_mac().unwrap()).into_boxed_str());
     });
 
     let mut mqtt_client = mqtt_connect()?;
