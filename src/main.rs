@@ -33,7 +33,7 @@ use esp_idf_svc::mqtt::client::{EspMqttClient, MqttClientConfiguration};
 #[allow(dead_code)]
 const SSID: &str = env!("ESP32_WIFI_SSID");
 #[allow(dead_code)]
-const PASS: &str = env!("ESP32_WIFI_PASS");
+const PASS: Option<&'static str> = option_env!("ESP32_WIFI_PASS");
 static mut MAC: &str = "";
 
 fn main() -> Result<()> {
@@ -114,11 +114,13 @@ fn wifi(
 
     wifi.set_configuration(&Configuration::Client(ClientConfiguration {
         ssid: SSID.into(),
-        password: PASS.into(),
-        auth_method: if PASS.is_empty() {
-            AuthMethod::None
-        } else {
-            AuthMethod::WPA2Personal
+        password: PASS.unwrap_or("").to_string(),
+        auth_method: match PASS {
+            Some(s) => match s.len() {
+                0 => AuthMethod::None,
+                _ => AuthMethod::WPA2Personal,
+            },
+            None => AuthMethod::None,
         },
         channel,
         ..Default::default()
