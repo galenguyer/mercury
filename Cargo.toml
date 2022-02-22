@@ -10,7 +10,7 @@ opt-level = "s"
 debug = true # Symbols are nice and they don't increase the size on Flash
 opt-level = "z"
 
-[dependencies]
+[target.xtensa-esp32-espidf.dependencies]
 anyhow = {version = "1", features = ["backtrace"]}
 log = "0.4"
 esp-idf-sys = { version = "0.30.3", features = ["binstart"] }
