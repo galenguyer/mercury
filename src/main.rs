@@ -1,34 +1,22 @@
-#![allow(unused_imports)]
-use std::{env, sync::Arc, thread, time::*};
-
 use anyhow::bail;
 use log::*;
 
 use embedded_hal::digital::v2::OutputPin;
-
 use embedded_svc::httpd::*;
 use embedded_svc::ipv4;
+use embedded_svc::mqtt::client::{Connection, Publish, QoS};
 use embedded_svc::ping::Ping;
 use embedded_svc::wifi::*;
-
+use esp_idf_hal::prelude::*;
+use esp_idf_svc::mqtt::client::{EspMqttClient, MqttClientConfiguration};
 use esp_idf_svc::netif::*;
 use esp_idf_svc::nvs::*;
 use esp_idf_svc::ping;
 use esp_idf_svc::sysloop::*;
 use esp_idf_svc::wifi::*;
+use esp_idf_sys::{self};
 
-use esp_idf_hal::adc;
-use esp_idf_hal::delay;
-use esp_idf_hal::gpio;
-use esp_idf_hal::i2c;
-use esp_idf_hal::prelude::*;
-use esp_idf_hal::spi;
-
-use esp_idf_sys::esp;
-use esp_idf_sys::{self, c_types};
-
-use embedded_svc::mqtt::client::{Client, Connection, Publish, QoS};
-use esp_idf_svc::mqtt::client::{EspMqttClient, MqttClientConfiguration};
+use std::{env, sync::Arc, thread, time::*};
 
 #[allow(dead_code)]
 const SSID: &str = env!("ESP32_WIFI_SSID");
