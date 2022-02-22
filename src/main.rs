@@ -18,6 +18,8 @@ use esp_idf_sys;
 
 use std::{env, sync::Arc, thread, time::*};
 
+use mercury::Message;
+
 const SSID: &str = env!("ESP32_WIFI_SSID");
 const PASS: Option<&'static str> = option_env!("ESP32_WIFI_PASS");
 static mut MAC: &str = "";
@@ -35,11 +37,7 @@ fn main() -> Result<()> {
     let sys_loop_stack = Arc::new(EspSysLoopStack::new()?);
     let default_nvs = Arc::new(EspDefaultNvs::new()?);
 
-    let wifi = wifi(
-        netif_stack,
-        sys_loop_stack,
-        default_nvs,
-    )?;
+    let wifi = wifi(netif_stack, sys_loop_stack, default_nvs)?;
 
     wifi.with_client_netif(|netif| unsafe {
         MAC = Box::leak(hex::encode(netif.unwrap().get_mac().unwrap()).into_boxed_str());
@@ -194,7 +192,10 @@ fn mqtt_send(
             topic,
             QoS::ExactlyOnce,
             false,
-            format!("{}: {}", client_id, message).as_bytes(),
+            serde_json::to_string(&Message{
+                author: client_id,
+                message: message.to_string(),
+            }).unwrap().as_bytes(),
         )
     }
 }

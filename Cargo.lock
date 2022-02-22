@@ -691,6 +691,8 @@ dependencies = [
  "esp-idf-sys",
  "hex",
  "log",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
