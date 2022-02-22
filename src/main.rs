@@ -14,13 +14,11 @@ use esp_idf_svc::nvs::*;
 use esp_idf_svc::ping;
 use esp_idf_svc::sysloop::*;
 use esp_idf_svc::wifi::*;
-use esp_idf_sys::{self};
+use esp_idf_sys;
 
 use std::{env, sync::Arc, thread, time::*};
 
-#[allow(dead_code)]
 const SSID: &str = env!("ESP32_WIFI_SSID");
-#[allow(dead_code)]
 const PASS: Option<&'static str> = option_env!("ESP32_WIFI_PASS");
 static mut MAC: &str = "";
 
@@ -30,24 +28,17 @@ fn main() -> Result<()> {
     // Bind the log crate to the ESP Logging facilities
     esp_idf_svc::log::EspLogger::initialize_default();
 
-    #[allow(unused)]
     let peripherals = Peripherals::take().unwrap();
-    #[allow(unused)]
     let pins = peripherals.pins;
 
-    #[allow(unused)]
     let netif_stack = Arc::new(EspNetifStack::new()?);
-    #[allow(unused)]
     let sys_loop_stack = Arc::new(EspSysLoopStack::new()?);
-    #[allow(unused)]
     let default_nvs = Arc::new(EspDefaultNvs::new()?);
 
-    #[allow(clippy::redundant_clone)]
-    #[allow(unused_mut)]
-    let mut wifi = wifi(
-        netif_stack.clone(),
-        sys_loop_stack.clone(),
-        default_nvs.clone(),
+    let wifi = wifi(
+        netif_stack,
+        sys_loop_stack,
+        default_nvs,
     )?;
 
     wifi.with_client_netif(|netif| unsafe {
@@ -74,7 +65,6 @@ fn main() -> Result<()> {
     }
 }
 
-#[allow(dead_code)]
 fn wifi(
     netif_stack: Arc<EspNetifStack>,
     sys_loop_stack: Arc<EspSysLoopStack>,
@@ -148,7 +138,7 @@ fn wifi(
     Ok(wifi)
 }
 
-#[allow(dead_code)]
+#[allow(unused)]
 fn ping(ip_settings: &ipv4::ClientSettings) -> Result<()> {
     info!("About to do some pings for {:?}", ip_settings);
 
