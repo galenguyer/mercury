@@ -1,4 +1,6 @@
 use anyhow::bail;
+use esp_idf_hal::ledc::Timer;
+use esp_idf_hal::ledc::config::TimerConfig;
 use log::*;
 
 use embedded_hal::digital::v2::OutputPin;
@@ -16,9 +18,12 @@ use esp_idf_svc::sysloop::*;
 use esp_idf_svc::wifi::*;
 use esp_idf_sys;
 
+
 use std::{env, sync::Arc, thread, time::*};
 
 use mercury::Message;
+mod dht22;
+use dht22::DHT22;
 
 const SSID: &str = env!("ESP32_WIFI_SSID");
 const PASS: Option<&'static str> = option_env!("ESP32_WIFI_PASS");
@@ -32,6 +37,22 @@ fn main() -> Result<()> {
 
     let peripherals = Peripherals::take().unwrap();
     let pins = peripherals.pins;
+
+    let dht_pin = pins.gpio15.into_input_output_od().unwrap();
+    let mut dht = DHT22::new(dht_pin);
+    loop {
+        match dht.read_blocking()  {
+            Ok(reading) => {
+                info!("{:#?}", reading);
+                info!("{}", reading.temp_celcius());
+            },
+            Err(e) => {
+                info!("{:?}", e);
+            }
+        }
+        std::thread::sleep(Duration::from_secs(5));
+    }
+    return Ok(());
 
     let netif_stack = Arc::new(EspNetifStack::new()?);
     let sys_loop_stack = Arc::new(EspSysLoopStack::new()?);
