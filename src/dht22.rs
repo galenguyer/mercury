@@ -56,7 +56,7 @@ where
             Ets.delay_us(1_u32);
         }
         // Return an Error instead
-        return Err(ErrorKind::Timeout);
+        Err(ErrorKind::Timeout)
     }
 
     #[inline(always)] // timing-critical
@@ -176,24 +176,15 @@ impl<E> From<ErrorKind<E>> for Error<E> {
 
 impl<E> Error<E> {
     pub fn is_timeout(&self) -> bool {
-        match self.0 {
-            ErrorKind::Timeout => true,
-            _ => false,
-        }
+        matches!(self.0, ErrorKind::Timeout)
     }
 
     pub fn is_io(&self) -> bool {
-        match self.0 {
-            ErrorKind::Io(_) => true,
-            _ => false,
-        }
+        matches!(self.0, ErrorKind::Io(_))
     }
 
     pub fn is_checksum(&self) -> bool {
-        match self.0 {
-            ErrorKind::Checksum { .. } => true,
-            _ => false,
-        }
+        matches!(self.0, ErrorKind::Checksum{ .. })
     }
 
     pub fn into_io(self) -> Option<E> {

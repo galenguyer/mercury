@@ -45,17 +45,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "async-trait"
-version = "0.1.52"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "061a7acccaa286c011ddc30970520b98fa40e00c9d644633fb26b5fc63a265e3"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
 name = "atty"
 version = "0.2.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -315,22 +304,22 @@ dependencies = [
 
 [[package]]
 name = "embedded-hal"
-version = "1.0.0-alpha.6"
+version = "1.0.0-alpha.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "570e765da7319a256dfe1542f14501a53f74e020b68aa666a98b1ad31a614c7e"
+checksum = "93cc714edeae73aa1ff259af4498595360b2992e0e9c59801873ed198a7f2216"
 dependencies = [
  "nb 1.0.0",
 ]
 
 [[package]]
 name = "embedded-svc"
-version = "0.16.8"
+version = "0.17.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c79521c3b999f78d40cdd0ac6493ee4f8288ecbc52a64dc92f6fbde63aac4af6"
+checksum = "05c48233b3ee40531e58274da19678eddfa51ad0ccc097d8cb06a6d93e629113"
 dependencies = [
  "anyhow",
- "async-trait",
  "enumset",
+ "futures",
  "http-auth-basic",
  "log",
  "no-std-net",
@@ -405,13 +394,13 @@ dependencies = [
 
 [[package]]
 name = "esp-idf-hal"
-version = "0.32.10"
+version = "0.33.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d203d5f6bc6d2335f7ea82b8c932c8f00c31fd7c4fb5d9db570350af02ad8832"
+checksum = "4c6668cffb44ffe9b1a5d70c788ed7af64f2fb3a22158e29f30aa3c350dda352"
 dependencies = [
  "anyhow",
  "embedded-hal 0.2.7",
- "embedded-hal 1.0.0-alpha.6",
+ "embedded-hal 1.0.0-alpha.7",
  "embedded-svc",
  "embuild",
  "esp-idf-sys",
@@ -420,8 +409,8 @@ dependencies = [
 
 [[package]]
 name = "esp-idf-svc"
-version = "0.36.10"
-source = "git+https://github.com/galenguyer/esp-idf-svc?branch=mac#2493c5b0b43c132377de3a6312dc699977b38d47"
+version = "0.37.2"
+source = "git+https://github.com/galenguyer/esp-idf-svc?branch=master#dc01d5e889ec1005e63b98a61091de854cade838"
 dependencies = [
  "anyhow",
  "cstr_core",
@@ -436,9 +425,9 @@ dependencies = [
 
 [[package]]
 name = "esp-idf-sys"
-version = "0.30.5"
+version = "0.30.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "539e83cbc50b923639c29ce706f7ea43e5cba4267126498dcae2f13e78988b7b"
+checksum = "9f302d45c644076f3d8c1a0d9b32eaca1e1232a993009db0a691ff851e0afbe9"
 dependencies = [
  "anyhow",
  "bindgen",
@@ -482,6 +471,67 @@ checksum = "5fc25a87fa4fd2094bffb06925852034d90a17f0d1e05197d4956d3555752191"
 dependencies = [
  "matches",
  "percent-encoding",
+]
+
+[[package]]
+name = "futures"
+version = "0.3.21"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f73fe65f54d1e12b726f517d3e2135ca3125a437b6d998caf1962961f7172d9e"
+dependencies = [
+ "futures-channel",
+ "futures-core",
+ "futures-io",
+ "futures-sink",
+ "futures-task",
+ "futures-util",
+]
+
+[[package]]
+name = "futures-channel"
+version = "0.3.21"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c3083ce4b914124575708913bca19bfe887522d6e2e6d0952943f5eac4a74010"
+dependencies = [
+ "futures-core",
+ "futures-sink",
+]
+
+[[package]]
+name = "futures-core"
+version = "0.3.21"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0c09fd04b7e4073ac7156a9539b57a484a8ea920f79c7c675d05d289ab6110d3"
+
+[[package]]
+name = "futures-io"
+version = "0.3.21"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fc4045962a5a5e935ee2fdedaa4e08284547402885ab326734432bed5d12966b"
+
+[[package]]
+name = "futures-sink"
+version = "0.3.21"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "21163e139fa306126e6eedaf49ecdb4588f939600f0b1e770f4205ee4b7fa868"
+
+[[package]]
+name = "futures-task"
+version = "0.3.21"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "57c66a976bf5909d801bbef33416c41372779507e7a6b3a5e25e4749c58f776a"
+
+[[package]]
+name = "futures-util"
+version = "0.3.21"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d8b7abd5d659d9b90c8cba917f6ec750a74e2dc23902ef9cd4cc8c8b22e6036a"
+dependencies = [
+ "futures-core",
+ "futures-sink",
+ "futures-task",
+ "pin-project-lite",
+ "pin-utils",
 ]
 
 [[package]]
@@ -799,6 +849,18 @@ name = "percent-encoding"
 version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d4fd5641d01c8f18a23da7b6fe29298ff4b55afcccdf78973b24cf3175fee32e"
+
+[[package]]
+name = "pin-project-lite"
+version = "0.2.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e280fbe77cc62c91527259e9442153f4688736748d24660126286329742b4c6c"
+
+[[package]]
+name = "pin-utils"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8b870d8c151b6f2fb93e84a13146138f05d02ed11c7e7c54f8826aaaf7c9f184"
 
 [[package]]
 name = "proc-macro-crate"

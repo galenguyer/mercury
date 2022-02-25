@@ -1,6 +1,4 @@
 use anyhow::bail;
-use esp_idf_hal::ledc::config::TimerConfig;
-use esp_idf_hal::ledc::Timer;
 use log::*;
 
 use embedded_hal::digital::v2::OutputPin;
@@ -16,7 +14,6 @@ use esp_idf_svc::nvs::*;
 use esp_idf_svc::ping;
 use esp_idf_svc::sysloop::*;
 use esp_idf_svc::wifi::*;
-use esp_idf_sys;
 
 use std::{env, sync::Arc, thread, time::*};
 

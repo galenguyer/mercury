@@ -8,7 +8,7 @@ use embuild::{
 
 fn main() -> anyhow::Result<()> {
     // Necessary because of this issue: https://github.com/rust-lang/cargo/issues/9641
-    if let Ok(_) = LinkArgs::output_propagated("ESP_IDF") {
+    if LinkArgs::output_propagated("ESP_IDF").is_ok() {
         let cfg = CfgArgs::try_from_env("ESP_IDF")?;
 
         if cfg.get("esp32s2").is_some() {
