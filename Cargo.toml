@@ -18,7 +18,7 @@ embedded-svc = { version = "0.17.3", features = ["experimental"] }
 esp-idf-hal = { version = "0.33.1", features = ["experimental"] }
 esp-idf-sys = { version = "0.30.6", features = ["binstart"] }
 #esp-idf-svc = { version = "0.36.9", features = ["experimental"] }
-esp-idf-svc = { git = "https://github.com/galenguyer/esp-idf-svc", branch = "master", features = ["experimental"] }
+esp-idf-svc = { git = "https://github.com/esp-rs/esp-idf-svc", rev = "a741662c", features = ["experimental"] }
 hex = "0.4.3"
 
 [build-dependencies]

@@ -410,7 +410,7 @@ dependencies = [
 [[package]]
 name = "esp-idf-svc"
 version = "0.37.2"
-source = "git+https://github.com/galenguyer/esp-idf-svc?branch=master#dc01d5e889ec1005e63b98a61091de854cade838"
+source = "git+https://github.com/esp-rs/esp-idf-svc?rev=a741662c#a741662cdf2fd9210e5a063dfe196fb6f9b8e9cf"
 dependencies = [
  "anyhow",
  "cstr_core",
