@@ -1,6 +1,6 @@
 [package]
 name = "mercury"
-version = "1.0.0"
+version = "1.1.0"
 authors = ["Galen Guyer <galen@galenguyer.com>"]
 edition = "2021"
 license = "MIT"
@@ -14,7 +14,6 @@ opt-level = "z"
 
 [target.xtensa-esp32-espidf.dependencies]
 anyhow = {version = "1", features = ["backtrace"]}
-log = "0.4"
 embedded-hal = "0.2.7"
 embedded-svc = { version = "0.17.3", features = ["experimental"] }
 esp-idf-hal = { version = "0.33.1", features = ["experimental"] }
@@ -22,6 +21,7 @@ esp-idf-sys = { version = "0.30.6", features = ["binstart"] }
 #esp-idf-svc = { version = "0.36.9", features = ["experimental"] }
 esp-idf-svc = { git = "https://github.com/esp-rs/esp-idf-svc", rev = "a741662c", features = ["experimental"] }
 hex = "0.4.3"
+log = "0.4"
 
 [build-dependencies]
 embuild = "0.28"

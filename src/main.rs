@@ -5,6 +5,7 @@ use esp_idf_hal::prelude::Peripherals;
 use esp_idf_svc::mqtt::client::{EspMqttClient, MqttClientConfiguration};
 use esp_idf_svc::netif::EspNetifStack;
 use esp_idf_svc::nvs::EspDefaultNvs;
+use esp_idf_svc::sntp;
 use esp_idf_svc::sysloop::EspSysLoopStack;
 use log::*;
 use std::{env, sync::Arc, thread, time::*};
@@ -46,14 +47,30 @@ fn main() -> Result<()> {
     let dht_pin = pins.gpio15.into_input_output_od().unwrap();
     let mut dht = dht22::DHT22::new(dht_pin);
 
+    // We have to change the NTP server because the underlying libraries don't know how to
+    // handle more than one A record, which the default of 0.pool.ntp.org returns.
+    let sntp_conf = sntp::SntpConf {
+        servers: [String::from("ntp.rit.edu")],
+        operating_mode: sntp::OperatingMode::Poll,
+        sync_mode: sntp::SyncMode::Immediate,
+    };
+    let sntp = sntp::EspSntp::new(&sntp_conf).unwrap();
+    while sntp.get_sync_status() != sntp::SyncStatus::Completed {
+        // Wait for SNTP to complete
+        thread::sleep(Duration::from_secs(1));
+    }
+    info!("NTP synchronized");
+
     loop {
         led.set_high().unwrap();
+        let unix_time = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)?.as_secs();
         if let Ok(reading) = dht.read_blocking() {
             mqtt_send(
                 &mut mqtt_client,
                 "mercury",
                 &mut Message {
                     author: "".to_string(),
+                    timestamp: unix_time,
                     temperature_c: format!("{:.1}", reading.clone().temp_celcius())
                         .parse::<f32>()
                         .unwrap(),
