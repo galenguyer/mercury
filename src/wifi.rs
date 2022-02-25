@@ -55,6 +55,9 @@ pub fn wifi_connect(
         ..Default::default()
     }))?;
 
+    wifi.wait_status_with_timeout(std::time::Duration::from_secs(20), |status| !status.is_transitional())
+        .map_err(|e| anyhow::anyhow!("Unexpected Wifi status: {:?}", e))?;
+
     let status = wifi.get_status();
 
     if let Status(
@@ -67,7 +70,6 @@ pub fn wifi_connect(
         //ping(&ip_settings)?;
     } else {
         info!("Unexpected Wifi status: {:?}", status);
-        std::thread::sleep(std::time::Duration::from_secs(5));
     }
 
     if let Some(ns) = primary_dns {
