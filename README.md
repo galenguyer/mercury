@@ -1,4 +1,5 @@
 # mercury
+mercury is a project to read information from dht22 temperature sensors and report it over mqtt to a chosen backend (datadog, prometheus+granfa, etc). mercury is the firmware that runs on esp32s. see the sister project [galenguyer/hermes](https://github.com/galenguyer/hermes) for the mqtt->storage client.
 
 ## esp32 setup
 ### rust toolchian
