@@ -36,16 +36,6 @@ fn main() -> Result<()> {
         option_env!("ESP32_SECONDARY_DNS_SERVER"),
     )?;
 
-    let mut mqtt_client = mqtt::connect(
-        env!("ESP32_MQTT_BROKER_URL"),
-        option_env!("ESP32_MQTT_USERNAME"),
-        option_env!("ESP32_MQTT_PASSWORD"),
-    )?;
-
-    let mut led = pins.gpio2.into_input_output_od().unwrap();
-    let dht_pin = pins.gpio15.into_input_output_od().unwrap();
-    let mut dht = dht22::DHT22::new(dht_pin);
-
     // We have to change the NTP server because the underlying libraries don't know how to
     // handle more than one A record, which the default of 0.pool.ntp.org returns.
     let sntp_conf = sntp::SntpConf {
@@ -59,6 +49,16 @@ fn main() -> Result<()> {
         thread::sleep(Duration::from_secs(1));
     }
     info!("NTP synchronized");
+
+    let mut mqtt_client = mqtt::connect(
+        env!("ESP32_MQTT_BROKER_URL"),
+        option_env!("ESP32_MQTT_USERNAME"),
+        option_env!("ESP32_MQTT_PASSWORD"),
+    )?;
+
+    let mut led = pins.gpio2.into_input_output_od().unwrap();
+    let dht_pin = pins.gpio15.into_input_output_od().unwrap();
+    let mut dht = dht22::DHT22::new(dht_pin);
 
     loop {
         led.set_high().unwrap();
