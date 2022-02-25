@@ -1,14 +1,12 @@
-use log::*;
-
+use anyhow::Result;
 use embedded_hal::digital::v2::OutputPin;
-use embedded_svc::httpd::*;
 use embedded_svc::mqtt::client::{Connection, Publish, QoS};
-use esp_idf_hal::prelude::*;
+use esp_idf_hal::prelude::Peripherals;
 use esp_idf_svc::mqtt::client::{EspMqttClient, MqttClientConfiguration};
-use esp_idf_svc::netif::*;
-use esp_idf_svc::nvs::*;
-use esp_idf_svc::sysloop::*;
-
+use esp_idf_svc::netif::EspNetifStack;
+use esp_idf_svc::nvs::EspDefaultNvs;
+use esp_idf_svc::sysloop::EspSysLoopStack;
+use log::*;
 use std::{env, sync::Arc, thread, time::*};
 
 use mercury::Message;
@@ -34,6 +32,8 @@ fn main() -> Result<()> {
         default_nvs,
         env!("ESP32_WIFI_SSID"),
         option_env!("ESP32_WIFI_PASS"),
+        option_env!("ESP32_PRIMARY_DNS_SERVER"),
+        option_env!("ESP32_SECONDARY_DNS_SERVER"),
     )?;
 
     let mut mqtt_client = mqtt_connect()?;

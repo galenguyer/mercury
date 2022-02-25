@@ -2,12 +2,12 @@ use anyhow::{bail, Result};
 use embedded_svc::ipv4;
 use embedded_svc::ping::Ping;
 use embedded_svc::wifi::*;
-use esp_idf_svc::netif::*;
-use esp_idf_svc::nvs::*;
+use esp_idf_svc::netif::EspNetifStack;
+use esp_idf_svc::nvs::EspDefaultNvs;
 use esp_idf_svc::ping;
-use esp_idf_svc::sysloop::*;
+use esp_idf_svc::sysloop::EspSysLoopStack;
 use esp_idf_svc::wifi::*;
-use log::*;
+use log::info;
 use std::sync::Arc;
 
 static mut MAC: &str = "";
@@ -18,6 +18,8 @@ pub fn wifi_connect(
     default_nvs: Arc<EspDefaultNvs>,
     ssid: &'static str,
     pass: Option<&'static str>,
+    primary_dns: Option<&'static str>,
+    secondary_dns: Option<&'static str>,
 ) -> Result<Box<EspWifi>> {
     let mut wifi = Box::new(EspWifi::new(netif_stack, sys_loop_stack, default_nvs)?);
 
@@ -67,7 +69,7 @@ pub fn wifi_connect(
         bail!("Unexpected Wifi status: {:?}", status);
     }
 
-    if let Some(ns) = option_env!("ESP32_PRIMARY_DNS_SERVER") {
+    if let Some(ns) = primary_dns {
         wifi.with_client_netif_mut(|netif| {
             netif.unwrap().set_dns(
                 ns.parse::<ipv4::Ipv4Addr>()
@@ -75,7 +77,7 @@ pub fn wifi_connect(
             );
         });
     }
-    if let Some(ns) = option_env!("ESP32_SECONDARY_DNS_SERVER") {
+    if let Some(ns) = secondary_dns {
         wifi.with_client_netif_mut(|netif| {
             netif.unwrap().set_secondary_dns(
                 ns.parse::<ipv4::Ipv4Addr>()
