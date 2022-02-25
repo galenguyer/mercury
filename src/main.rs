@@ -1,8 +1,6 @@
 use anyhow::Result;
 use embedded_hal::digital::v2::OutputPin;
-use embedded_svc::mqtt::client::{Connection, Publish, QoS};
 use esp_idf_hal::prelude::Peripherals;
-use esp_idf_svc::mqtt::client::{EspMqttClient, MqttClientConfiguration};
 use esp_idf_svc::netif::EspNetifStack;
 use esp_idf_svc::nvs::EspDefaultNvs;
 use esp_idf_svc::sntp;
@@ -12,6 +10,7 @@ use std::{env, sync::Arc, thread, time::*};
 
 use mercury::Message;
 mod dht22;
+mod mqtt;
 mod wifi;
 
 fn main() -> Result<()> {
@@ -37,7 +36,7 @@ fn main() -> Result<()> {
         option_env!("ESP32_SECONDARY_DNS_SERVER"),
     )?;
 
-    let mut mqtt_client = mqtt_connect(
+    let mut mqtt_client = mqtt::connect(
         env!("ESP32_MQTT_BROKER_URL"),
         option_env!("ESP32_MQTT_USERNAME"),
         option_env!("ESP32_MQTT_PASSWORD"),
@@ -67,7 +66,7 @@ fn main() -> Result<()> {
             .duration_since(SystemTime::UNIX_EPOCH)?
             .as_secs();
         if let Ok(reading) = dht.read_blocking() {
-            mqtt_send(
+            mqtt::send(
                 &mut mqtt_client,
                 "mercury",
                 &mut Message {
@@ -88,46 +87,4 @@ fn main() -> Result<()> {
         led.set_low().unwrap();
         thread::sleep(Duration::from_secs(4));
     }
-}
-
-fn mqtt_connect(
-    url: &str,
-    username: Option<&str>,
-    password: Option<&str>,
-) -> Result<esp_idf_svc::mqtt::client::EspMqttClient> {
-    let client_id = format!("esp32-{}", wifi::get_mac());
-    let conf = MqttClientConfiguration {
-        client_id: Some(&client_id),
-        username,
-        password,
-        ..Default::default()
-    };
-
-    let (client, mut connection) = EspMqttClient::new(url, &conf)?;
-
-    thread::spawn(move || {
-        info!("MQTT Listening for messages");
-        while let Some(msg) = connection.next() {
-            if let Err(e) = msg {
-                info!("MQTT Message ERROR: {}", e);
-            }
-        }
-        info!("MQTT connection loop exit");
-    });
-
-    Ok(client)
-}
-
-fn mqtt_send(
-    client: &mut EspMqttClient,
-    topic: &str,
-    message: &mut Message,
-) -> Result<u32, esp_idf_sys::EspError> {
-    message.author = format!("esp32-{}", wifi::get_mac());
-    client.publish(
-        topic,
-        QoS::AtMostOnce,
-        false,
-        serde_json::to_string(message).unwrap().as_bytes(),
-    )
 }
