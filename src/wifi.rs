@@ -10,6 +10,8 @@ use esp_idf_svc::wifi::*;
 use log::*;
 use std::sync::Arc;
 
+static mut MAC: &str = "";
+
 pub fn wifi_connect(
     netif_stack: Arc<EspNetifStack>,
     sys_loop_stack: Arc<EspSysLoopStack>,
@@ -82,7 +84,15 @@ pub fn wifi_connect(
         });
     }
 
+    wifi.with_client_netif(|netif| unsafe {
+        MAC = Box::leak(hex::encode(netif.unwrap().get_mac().unwrap()).into_boxed_str());
+    });
+
     Ok(wifi)
+}
+
+pub fn get_mac() -> String {
+    unsafe { MAC.to_string() }
 }
 
 #[allow(unused)]

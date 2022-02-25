@@ -15,8 +15,6 @@ use mercury::Message;
 mod dht22;
 mod wifi;
 
-static mut MAC: &str = "";
-
 fn main() -> Result<()> {
     esp_idf_sys::link_patches();
 
@@ -30,17 +28,13 @@ fn main() -> Result<()> {
     let sys_loop_stack = Arc::new(EspSysLoopStack::new()?);
     let default_nvs = Arc::new(EspDefaultNvs::new()?);
 
-    let wifi = wifi::wifi_connect(
+    let _wifi = wifi::wifi_connect(
         netif_stack,
         sys_loop_stack,
         default_nvs,
         env!("ESP32_WIFI_SSID"),
         option_env!("ESP32_WIFI_PASS"),
     )?;
-
-    wifi.with_client_netif(|netif| unsafe {
-        MAC = Box::leak(hex::encode(netif.unwrap().get_mac().unwrap()).into_boxed_str());
-    });
 
     let mut mqtt_client = mqtt_connect()?;
 
@@ -74,30 +68,28 @@ fn main() -> Result<()> {
 }
 
 fn mqtt_connect() -> Result<esp_idf_svc::mqtt::client::EspMqttClient> {
-    unsafe {
-        let client_id = format!("esp32-{}", MAC);
-        let conf = MqttClientConfiguration {
-            client_id: Some(&client_id),
-            ..Default::default()
-        };
+    let client_id = format!("esp32-{}", wifi::get_mac());
+    let conf = MqttClientConfiguration {
+        client_id: Some(&client_id),
+        ..Default::default()
+    };
 
-        let (client, mut connection) =
-            EspMqttClient::new("mqtt://mercury.student.rit.edu:1883", &conf)?;
+    let (client, mut connection) =
+        EspMqttClient::new("mqtt://mercury.student.rit.edu:1883", &conf)?;
 
-        thread::spawn(move || {
-            info!("MQTT Listening for messages");
+    thread::spawn(move || {
+        info!("MQTT Listening for messages");
 
-            while let Some(msg) = connection.next() {
-                if let Err(e) = msg {
-                    info!("MQTT Message ERROR: {}", e);
-                }
+        while let Some(msg) = connection.next() {
+            if let Err(e) = msg {
+                info!("MQTT Message ERROR: {}", e);
             }
+        }
 
-            info!("MQTT connection loop exit");
-        });
+        info!("MQTT connection loop exit");
+    });
 
-        Ok(client)
-    }
+    Ok(client)
 }
 
 fn mqtt_send(
@@ -105,13 +97,11 @@ fn mqtt_send(
     topic: &str,
     message: &mut Message,
 ) -> Result<u32, esp_idf_sys::EspError> {
-    unsafe {
-        message.author = format!("esp32-{}", MAC);
-        client.publish(
-            topic,
-            QoS::ExactlyOnce,
-            false,
-            serde_json::to_string(message).unwrap().as_bytes(),
-        )
-    }
+    message.author = format!("esp32-{}", wifi::get_mac());
+    client.publish(
+        topic,
+        QoS::ExactlyOnce,
+        false,
+        serde_json::to_string(message).unwrap().as_bytes(),
+    )
 }
