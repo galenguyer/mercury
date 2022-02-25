@@ -55,8 +55,10 @@ pub fn wifi_connect(
         ..Default::default()
     }))?;
 
-    wifi.wait_status_with_timeout(std::time::Duration::from_secs(20), |status| !status.is_transitional())
-        .map_err(|e| anyhow::anyhow!("Unexpected Wifi status: {:?}", e))?;
+    wifi.wait_status_with_timeout(std::time::Duration::from_secs(20), |status| {
+        !status.is_transitional()
+    })
+    .map_err(|e| anyhow::anyhow!("Unexpected Wifi status: {:?}", e))?;
 
     let status = wifi.get_status();
 

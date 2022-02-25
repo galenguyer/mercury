@@ -63,7 +63,9 @@ fn main() -> Result<()> {
 
     loop {
         led.set_high().unwrap();
-        let unix_time = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)?.as_secs();
+        let unix_time = SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)?
+            .as_secs();
         if let Ok(reading) = dht.read_blocking() {
             mqtt_send(
                 &mut mqtt_client,
