@@ -12,7 +12,7 @@ use std::sync::Arc;
 
 static mut MAC: &str = "";
 
-pub fn wifi_connect(
+pub fn connect(
     netif_stack: Arc<EspNetifStack>,
     sys_loop_stack: Arc<EspSysLoopStack>,
     default_nvs: Arc<EspDefaultNvs>,

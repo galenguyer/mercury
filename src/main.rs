@@ -26,7 +26,7 @@ fn main() -> Result<()> {
     let sys_loop_stack = Arc::new(EspSysLoopStack::new()?);
     let default_nvs = Arc::new(EspDefaultNvs::new()?);
 
-    let _wifi = wifi::wifi_connect(
+    let _wifi = wifi::connect(
         netif_stack,
         sys_loop_stack,
         default_nvs,
