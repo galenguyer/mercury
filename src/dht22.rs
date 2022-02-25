@@ -1,4 +1,8 @@
-use embedded_hal::{digital::v2::{InputPin, OutputPin}, blocking::delay::*};
+#![allow(dead_code)]
+use embedded_hal::{
+    blocking::delay::*,
+    digital::v2::{InputPin, OutputPin},
+};
 use esp_idf_hal::{delay::Ets, interrupt::CriticalSection};
 
 #[derive(Debug)]
@@ -35,9 +39,7 @@ where
     P: InputPin<Error = E> + OutputPin<Error = E>,
 {
     pub fn new(pin: P) -> Self {
-        Self {
-            pin,
-        }
+        Self { pin }
     }
 }
 
@@ -115,19 +117,16 @@ impl Reading {
             // If the high pulse is longer than the leading low pulse, the bit
             // is a 1, otherwise, it's a 0.
             for Pulse { lo, hi } in pulses {
-                print!("{}", if hi > lo { 1 } else { 0 } );
                 *byte <<= 1;
                 if hi > lo {
                     *byte |= 1;
                 }
             }
-            print!(" ");
             // If this isn't the last byte, then add it to the checksum.
             if i < 4 {
                 chksum += *byte as u16;
             }
         }
-        println!("");
 
         // Does the checksum match?
         let expected = bytes[4];
@@ -192,7 +191,7 @@ impl<E> Error<E> {
 
     pub fn is_checksum(&self) -> bool {
         match self.0 {
-            ErrorKind::Checksum {..} => true,
+            ErrorKind::Checksum { .. } => true,
             _ => false,
         }
     }

@@ -1,6 +1,6 @@
 use anyhow::bail;
-use esp_idf_hal::ledc::Timer;
 use esp_idf_hal::ledc::config::TimerConfig;
+use esp_idf_hal::ledc::Timer;
 use log::*;
 
 use embedded_hal::digital::v2::OutputPin;
@@ -17,7 +17,6 @@ use esp_idf_svc::ping;
 use esp_idf_svc::sysloop::*;
 use esp_idf_svc::wifi::*;
 use esp_idf_sys;
-
 
 use std::{env, sync::Arc, thread, time::*};
 
@@ -38,22 +37,6 @@ fn main() -> Result<()> {
     let peripherals = Peripherals::take().unwrap();
     let pins = peripherals.pins;
 
-    let dht_pin = pins.gpio15.into_input_output_od().unwrap();
-    let mut dht = DHT22::new(dht_pin);
-    loop {
-        match dht.read_blocking()  {
-            Ok(reading) => {
-                info!("{:#?}", reading);
-                info!("{}", reading.temp_celcius());
-            },
-            Err(e) => {
-                info!("{:?}", e);
-            }
-        }
-        std::thread::sleep(Duration::from_secs(5));
-    }
-    return Ok(());
-
     let netif_stack = Arc::new(EspNetifStack::new()?);
     let sys_loop_stack = Arc::new(EspSysLoopStack::new()?);
     let default_nvs = Arc::new(EspDefaultNvs::new()?);
@@ -65,20 +48,31 @@ fn main() -> Result<()> {
     });
 
     let mut mqtt_client = mqtt_connect()?;
-    mqtt_send(&mut mqtt_client, "mercury", "connected")?;
 
     let mut led = pins.gpio2.into_input_output_od().unwrap();
+    let dht_pin = pins.gpio15.into_input_output_od().unwrap();
+    let mut dht = DHT22::new(dht_pin);
 
-    let mut loop_count: u32 = 1;
     loop {
         led.set_high().unwrap();
-        mqtt_send(
-            &mut mqtt_client,
-            "mercury",
-            &format!("looped {} times", loop_count),
-        )?;
-        loop_count += 1;
-        thread::sleep(Duration::from_secs(1));
+        if let Ok(reading) = dht.read_blocking() {
+            mqtt_send(
+                &mut mqtt_client,
+                "mercury",
+                &mut Message {
+                    author: "".to_string(),
+                    temperature_c: format!("{:.1}", reading.clone().temp_celcius())
+                        .parse::<f32>()
+                        .unwrap(),
+                    temperature_f: format!("{:.1}", reading.clone().temp_fahrenheit())
+                        .parse::<f32>()
+                        .unwrap(),
+                    humidity: reading.clone().humidity_percent().round(),
+                    message: "".to_string(),
+                },
+            )?;
+            thread::sleep(Duration::from_secs(1));
+        }
         led.set_low().unwrap();
         thread::sleep(Duration::from_secs(4));
     }
@@ -205,18 +199,15 @@ fn mqtt_connect() -> Result<esp_idf_svc::mqtt::client::EspMqttClient> {
 fn mqtt_send(
     client: &mut EspMqttClient,
     topic: &str,
-    message: &str,
+    message: &mut Message,
 ) -> Result<u32, esp_idf_sys::EspError> {
     unsafe {
-        let client_id = format!("esp32-{}", MAC);
+        message.author = format!("esp32-{}", MAC);
         client.publish(
             topic,
             QoS::ExactlyOnce,
             false,
-            serde_json::to_string(&Message{
-                author: client_id,
-                message: message.to_string(),
-            }).unwrap().as_bytes(),
+            serde_json::to_string(message).unwrap().as_bytes(),
         )
     }
 }
