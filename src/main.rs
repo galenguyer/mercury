@@ -107,7 +107,7 @@ fn mqtt_send(
     message.author = format!("esp32-{}", wifi::get_mac());
     client.publish(
         topic,
-        QoS::ExactlyOnce,
+        QoS::AtMostOnce,
         false,
         serde_json::to_string(message).unwrap().as_bytes(),
     )
