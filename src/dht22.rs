@@ -184,7 +184,7 @@ impl<E> Error<E> {
     }
 
     pub fn is_checksum(&self) -> bool {
-        matches!(self.0, ErrorKind::Checksum{ .. })
+        matches!(self.0, ErrorKind::Checksum { .. })
     }
 
     pub fn into_io(self) -> Option<E> {
