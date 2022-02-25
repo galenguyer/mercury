@@ -18,6 +18,7 @@ cargo +esp espflash /dev/ttyUSB0 --speed 460800 [--release] [--monitor]
 #### .env values
 ```
 ESP32_WIFI_SSID
+ESP32_WIFI_PASS
 ESP32_PRIMARY_DNS_SERVER
 ESP32_SECONDARY_DNS_SERVER
 ESP32_MQTT_BROKER_URL
