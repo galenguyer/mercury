@@ -36,7 +36,11 @@ fn main() -> Result<()> {
         option_env!("ESP32_SECONDARY_DNS_SERVER"),
     )?;
 
-    let mut mqtt_client = mqtt_connect()?;
+    let mut mqtt_client = mqtt_connect(
+        env!("ESP32_MQTT_BROKER_URL"),
+        option_env!("ESP32_MQTT_USERNAME"),
+        option_env!("ESP32_MQTT_PASSWORD"),
+    )?;
 
     let mut led = pins.gpio2.into_input_output_od().unwrap();
     let dht_pin = pins.gpio15.into_input_output_od().unwrap();
@@ -67,25 +71,28 @@ fn main() -> Result<()> {
     }
 }
 
-fn mqtt_connect() -> Result<esp_idf_svc::mqtt::client::EspMqttClient> {
+fn mqtt_connect(
+    url: &str,
+    username: Option<&str>,
+    password: Option<&str>,
+) -> Result<esp_idf_svc::mqtt::client::EspMqttClient> {
     let client_id = format!("esp32-{}", wifi::get_mac());
     let conf = MqttClientConfiguration {
         client_id: Some(&client_id),
+        username,
+        password,
         ..Default::default()
     };
 
-    let (client, mut connection) =
-        EspMqttClient::new("mqtt://mercury.student.rit.edu:1883", &conf)?;
+    let (client, mut connection) = EspMqttClient::new(url, &conf)?;
 
     thread::spawn(move || {
         info!("MQTT Listening for messages");
-
         while let Some(msg) = connection.next() {
             if let Err(e) = msg {
                 info!("MQTT Message ERROR: {}", e);
             }
         }
-
         info!("MQTT connection loop exit");
     });
 

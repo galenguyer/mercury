@@ -66,7 +66,8 @@ pub fn wifi_connect(
     {
         //ping(&ip_settings)?;
     } else {
-        bail!("Unexpected Wifi status: {:?}", status);
+        info!("Unexpected Wifi status: {:?}", status);
+        std::thread::sleep(std::time::Duration::from_secs(5));
     }
 
     if let Some(ns) = primary_dns {
