@@ -13,7 +13,9 @@ fn main() -> anyhow::Result<()> {
 
         if cfg.get("esp32s2").is_some() {
             // Future; might be possible once https://github.com/rust-lang/cargo/issues/9096 hits Cargo nightly:
-            //let ulp_elf = PathBuf::from(env::var_os("CARGO_BIN_FILE_RUST_ESP32_ULP_BLINK_rust_esp32_ulp_blink").unwrap());
+            //let ulp_elf =
+            // PathBuf::from(env::var_os("
+            // CARGO_BIN_FILE_RUST_ESP32_ULP_BLINK_rust_esp32_ulp_blink").unwrap());
 
             let ulp_elf = PathBuf::from("ulp").join("rust-esp32-ulp-blink");
             cargo::track_file(&ulp_elf);

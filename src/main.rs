@@ -36,8 +36,9 @@ fn main() -> Result<()> {
         option_env!("ESP32_SECONDARY_DNS_SERVER"),
     )?;
 
-    // We have to change the NTP server because the underlying libraries don't know how to
-    // handle more than one A record, which the default of 0.pool.ntp.org returns.
+    // We have to change the NTP server because the underlying libraries don't know
+    // how to handle more than one A record, which the default of 0.pool.ntp.org
+    // returns.
     let sntp_conf = sntp::SntpConf {
         servers: [String::from("ntp.rit.edu")],
         operating_mode: sntp::OperatingMode::Poll,
