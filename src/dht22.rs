@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 use embedded_hal::{
-    blocking::delay::*,
+    blocking::delay::{DelayMs, DelayUs},
     digital::v2::{InputPin, OutputPin},
 };
 use esp_idf_hal::{delay::Ets, interrupt::CriticalSection};
@@ -47,7 +47,6 @@ impl<P, E> DHT22<P>
 where
     P: InputPin<Error = E> + OutputPin<Error = E>,
 {
-    #[inline(always)] // timing-critical
     fn read_pulse_us(&mut self, high: bool) -> Result<u8, ErrorKind<E>> {
         for len in 0..=core::u8::MAX {
             if self.pin.is_high()? != high {
@@ -59,7 +58,6 @@ where
         Err(ErrorKind::Timeout)
     }
 
-    #[inline(always)] // timing-critical
     fn start_signal_blocking(&mut self) -> Result<(), ErrorKind<E>> {
         self.pin.set_high()?;
         Ets.delay_ms(1_u32);
@@ -75,7 +73,6 @@ where
         Ok(())
     }
 
-    #[inline(always)] // timing-critical
     pub fn read_blocking(&mut self) -> Result<Reading, Error<E>> {
         self.start_signal_blocking().map_err(ErrorKind::from)?;
 
@@ -124,13 +121,13 @@ impl Reading {
             }
             // If this isn't the last byte, then add it to the checksum.
             if i < 4 {
-                chksum += *byte as u16;
+                chksum += u16::from(*byte);
             }
         }
 
         // Does the checksum match?
-        let expected = bytes[4];
         let actual = chksum as u8;
+        let expected = bytes[4];
         if actual != expected {
             return Err(ErrorKind::Checksum { actual, expected });
         }
@@ -149,7 +146,8 @@ impl Reading {
     }
 
     pub fn temp_celcius(self) -> f32 {
-        let mut temp = (((self.t_integral & 0x7F) as u16) << 8 | self.t_decimal as u16) as f32;
+        let mut temp =
+            f32::from((u16::from(self.t_integral & 0x7F)) << 8 | u16::from(self.t_decimal));
         temp *= 0.1;
         if self.t_integral & 0x80 != 0 {
             temp *= -1.0;
@@ -158,7 +156,7 @@ impl Reading {
     }
 
     pub fn humidity_percent(self) -> f32 {
-        ((self.rh_integral as u16) << 8 | self.rh_decimal as u16) as f32 * 0.1
+        f32::from((u16::from(self.rh_integral)) << 8 | u16::from(self.rh_decimal)) * 0.1
     }
 }
 

@@ -1,12 +1,15 @@
 use anyhow::{bail, Result};
 use embedded_svc::ipv4;
-use embedded_svc::ping::Ping;
-use embedded_svc::wifi::*;
+use embedded_svc::ping::{self, Ping};
+use embedded_svc::wifi::{
+    AuthMethod, ClientConfiguration, ClientConnectionStatus, ClientIpStatus, ClientStatus,
+    Configuration, Status, Wifi,
+};
 use esp_idf_svc::netif::EspNetifStack;
 use esp_idf_svc::nvs::EspDefaultNvs;
-use esp_idf_svc::ping;
+use esp_idf_svc::ping::EspPing;
 use esp_idf_svc::sysloop::EspSysLoopStack;
-use esp_idf_svc::wifi::*;
+use esp_idf_svc::wifi::EspWifi;
 use lazy_static::lazy_static;
 use log::info;
 use std::sync::{Arc, Mutex};
@@ -55,7 +58,7 @@ pub fn connect(
             None => AuthMethod::None,
         },
         channel,
-        ..Default::default()
+        ..ClientConfiguration::default()
     }))?;
 
     wifi.wait_status_with_timeout(std::time::Duration::from_secs(20), |status| {
@@ -110,7 +113,7 @@ fn ping(ip_settings: &ipv4::ClientSettings) -> Result<()> {
     info!("About to do some pings for {:?}", ip_settings);
 
     let ping_summary =
-        ping::EspPing::default().ping(ip_settings.subnet.gateway, &Default::default())?;
+        EspPing::default().ping(ip_settings.subnet.gateway, &ping::Configuration::default())?;
     if ping_summary.transmitted != ping_summary.received {
         bail!(
             "Pinging gateway {} resulted in timeouts",

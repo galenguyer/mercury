@@ -5,8 +5,13 @@ use esp_idf_svc::netif::EspNetifStack;
 use esp_idf_svc::nvs::EspDefaultNvs;
 use esp_idf_svc::sntp;
 use esp_idf_svc::sysloop::EspSysLoopStack;
-use log::*;
-use std::{env, sync::Arc, thread, time::*};
+use log::info;
+use std::{
+    env,
+    sync::Arc,
+    thread,
+    time::{Duration, SystemTime},
+};
 
 use mercury::Message;
 mod dht22;

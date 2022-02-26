@@ -15,7 +15,7 @@ pub fn connect(
         client_id: Some(&client_id),
         username,
         password,
-        ..Default::default()
+        ..MqttClientConfiguration::default()
     };
 
     let (client, mut connection) = EspMqttClient::new(url, &conf)?;
