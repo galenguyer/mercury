@@ -7,10 +7,13 @@ use esp_idf_svc::nvs::EspDefaultNvs;
 use esp_idf_svc::ping;
 use esp_idf_svc::sysloop::EspSysLoopStack;
 use esp_idf_svc::wifi::*;
+use lazy_static::lazy_static;
 use log::info;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
-static mut MAC: &str = "";
+lazy_static! {
+    static ref MAC: Mutex<String> = Mutex::new(String::from(""));
+}
 
 pub fn connect(
     netif_stack: Arc<EspNetifStack>,
@@ -91,15 +94,15 @@ pub fn connect(
         });
     }
 
-    wifi.with_client_netif(|netif| unsafe {
-        MAC = Box::leak(hex::encode(netif.unwrap().get_mac().unwrap()).into_boxed_str());
+    wifi.with_client_netif(|netif| {
+        *MAC.lock().unwrap() = hex::encode(netif.unwrap().get_mac().unwrap());
     });
 
     Ok(wifi)
 }
 
 pub fn get_mac() -> String {
-    unsafe { MAC.to_string() }
+    return (*MAC.lock().unwrap()).to_string();
 }
 
 #[allow(unused)]
