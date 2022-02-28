@@ -25,3 +25,8 @@ ESP32_MQTT_BROKER_URL
 ESP32_MQTT_USERNAME
 ESP32_MQTT_PASSWORD
 ```
+
+## Current Locations
+esp32-30c6f7036b24 - SSN
+esp32-30c6f70b4f60 - Server Room Networking Rack
+esp32-30c6f70b4e74 - Server Room Bench
