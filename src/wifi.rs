@@ -18,6 +18,7 @@ lazy_static! {
     static ref MAC: Mutex<String> = Mutex::new(String::from(""));
 }
 
+/// Connect to wifi
 pub fn connect(
     netif_stack: Arc<EspNetifStack>,
     sys_loop_stack: Arc<EspSysLoopStack>,
@@ -80,6 +81,7 @@ pub fn connect(
         info!("Unexpected Wifi status: {:?}", status);
     }
 
+    // Set DNS from environment in case DHCP doesn't provide DNS servers for us
     if let Some(ns) = primary_dns {
         wifi.with_client_netif_mut(|netif| {
             netif.unwrap().set_dns(
@@ -97,6 +99,7 @@ pub fn connect(
         });
     }
 
+    // Set the MAC address static variable
     wifi.with_client_netif(|netif| {
         *MAC.lock().unwrap() = hex::encode(netif.unwrap().get_mac().unwrap());
     });
@@ -104,6 +107,7 @@ pub fn connect(
     Ok(wifi)
 }
 
+/// Get the MAC address of the Wifi interface after connecting
 pub fn get_mac() -> String {
     return (*MAC.lock().unwrap()).to_string();
 }

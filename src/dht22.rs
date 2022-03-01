@@ -1,3 +1,5 @@
+// DHT22 Spec Sheet:
+// https://cdn-shop.adafruit.com/datasheets/Digital+humidity+and+temperature+sensor+AM2302.pdf
 #![allow(dead_code)]
 use embedded_hal::{
     blocking::delay::{DelayMs, DelayUs},
@@ -47,10 +49,12 @@ impl<P, E> DHT22<P>
 where
     P: InputPin<Error = E> + OutputPin<Error = E>,
 {
+    /// Read from the GPIO pin until the signal changes and return the time
+    /// before the signal changed
     fn read_pulse_us(&mut self, high: bool) -> Result<u8, ErrorKind<E>> {
-        for len in 0..=core::u8::MAX {
+        for time in 0..=core::u8::MAX {
             if self.pin.is_high()? != high {
-                return Ok(len);
+                return Ok(time);
             }
             Ets.delay_us(1_u32);
         }
@@ -58,6 +62,7 @@ where
         Err(ErrorKind::Timeout)
     }
 
+    /// Send the signals specified by the DHT22 documentation
     fn start_signal_blocking(&mut self) -> Result<(), ErrorKind<E>> {
         self.pin.set_high()?;
         Ets.delay_ms(1_u32);
@@ -91,7 +96,6 @@ where
         // Read each bit from the sensor now. We'll convert the raw pulses into
         // bytes in a subsequent step, to avoid doing that work in the
         // timing-critical loop.
-
         let cs = CriticalSection::new();
         let csg = cs.enter();
         for pulse in &mut pulses[..] {

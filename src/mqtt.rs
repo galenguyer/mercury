@@ -5,6 +5,7 @@ use esp_idf_svc::mqtt::client::{EspMqttClient, MqttClientConfiguration};
 use log::info;
 use std::thread;
 
+/// Connect to our MQTT broker
 pub fn connect(
     url: &str,
     username: Option<&str>,
@@ -33,6 +34,7 @@ pub fn connect(
     Ok(client)
 }
 
+/// Send a Message over MQTT
 pub fn send(
     client: &mut EspMqttClient,
     topic: &str,
