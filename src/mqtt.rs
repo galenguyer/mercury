@@ -25,7 +25,7 @@ pub fn connect(
         info!("MQTT Listening for messages");
         while let Some(msg) = connection.next() {
             if let Err(e) = msg {
-                info!("MQTT Message ERROR: {}", e);
+                panic!("MQTT Message ERROR: {}", e);
             }
         }
         info!("MQTT connection loop exit");
